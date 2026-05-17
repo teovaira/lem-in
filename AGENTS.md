@@ -14,12 +14,12 @@ Before touching any file, read [lem-in-reference.md](lem-in-reference.md). It is
 
 | Package | Owner | File |
 |---|---|---|
-| `graph` | KRYSTALLENIA | `graph/graph.go`, `graph/graph_test.go` |
-| `parser` | KRYSTALLENIA | `parser/parser.go`, `parser/parser_test.go` |
-| `pathfinder` | VASILIKI | `pathfinder/pathfinder.go`, `pathfinder/pathfinder_test.go` |
-| `simulator` | THEO | `simulator/simulator.go`, `simulator/simulator_test.go` |
-| `output` | THEO | `output/output.go`, `output/output_test.go` |
-| `main` | THEO | `main.go`, `main_test.go` |
+| `graph` | KRYSTALLENIA | `internal/graph/graph.go`, `internal/graph/graph_test.go` |
+| `parser` | KRYSTALLENIA | `internal/parser/parser.go`, `internal/parser/parser_test.go` |
+| `pathfinder` | VASILIKI | `internal/pathfinder/pathfinder.go`, `internal/pathfinder/pathfinder_test.go` |
+| `simulator` | THEO | `internal/simulator/simulator.go`, `internal/simulator/simulator_test.go` |
+| `output` | THEO | `internal/output/output.go`, `internal/output/output_test.go` |
+| `main` | THEO | `cmd/lem-in/main.go`, `cmd/lem-in/main_test.go` |
 
 Do not generate code in another owner's package unless explicitly asked.
 
@@ -79,7 +79,7 @@ return fmt.Errorf("context: %w", err)       // wrong — pollutes the output
 ## What success looks like
 
 ```bash
-go build .              # zero errors
+go build ./cmd/lem-in   # zero errors
 go test ./...           # zero failures
 go test -race ./...     # zero races
 go vet ./...            # zero issues

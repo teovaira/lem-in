@@ -1,7 +1,7 @@
 .PHONY: build test vet race clean run
 
 build:
-	go build -o lem-in .
+	go build -o lem-in ./cmd/lem-in
 
 test:
 	go test ./...
@@ -16,4 +16,4 @@ clean:
 	rm -f lem-in
 
 run:
-	go run . $(ARGS)
+	go run ./cmd/lem-in $(ARGS)
