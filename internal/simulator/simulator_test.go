@@ -59,6 +59,50 @@ func TestSimulateOneAntOnePath(t *testing.T) {
 	}
 }
 
+// verifyAllAntsReachEnd checks that every ant ID 1..c.Ants appears in end
+// exactly once across all turns, and never moves after reaching end.
+func verifyAllAntsReachEnd(t *testing.T, c *graph.Colony, turns [][]graph.Move) {
+	t.Helper()
+	reached := make(map[int]bool)
+	for ti, turn := range turns {
+		for _, m := range turn {
+			if reached[m.AntID] {
+				t.Errorf("turn %d: ant %d moved after reaching end", ti+1, m.AntID)
+			}
+			if m.Room == c.End {
+				reached[m.AntID] = true
+			}
+		}
+	}
+	for id := 1; id <= c.Ants; id++ {
+		if !reached[id] {
+			t.Errorf("ant %d never reached end", id)
+		}
+	}
+}
+
+// TestSimulateAllAntsReachEnd verifies every ant reaches end exactly once.
+func TestSimulateAllAntsReachEnd(t *testing.T) {
+	c := &graph.Colony{
+		Ants:  4,
+		Start: "start",
+		End:   "end",
+		Rooms: map[string]*graph.Room{
+			"start": {Name: "start"},
+			"a":     {Name: "a"},
+			"b":     {Name: "b"},
+			"end":   {Name: "end"},
+		},
+		Links: map[string][]string{},
+	}
+	paths := []graph.Path{
+		{"start", "a", "end"},
+		{"start", "b", "end"},
+	}
+	turns := Simulate(c, paths)
+	verifyAllAntsReachEnd(t, c, turns)
+}
+
 // TestSimulateThreeAntsTwoPaths verifies staggered pipeline assignment.
 // 3 ants, 2 paths: path0=[start,a,end] (len 3), path1=[start,b,c,end] (len 4).
 // Greedy: ant1→path0 offset0, ant2→path0 offset1, ant3→path1 offset0.
