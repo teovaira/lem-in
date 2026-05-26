@@ -59,6 +59,51 @@ func TestSimulateOneAntOnePath(t *testing.T) {
 	}
 }
 
+// verifyNoCollision checks no two ants share the same intermediate room on the same turn.
+// Start and end are excluded — they may hold multiple ants simultaneously.
+func verifyNoCollision(t *testing.T, turns [][]graph.Move, start, end string) {
+	t.Helper()
+	for ti, turn := range turns {
+		seen := make(map[string]int)
+		for _, m := range turn {
+			if m.Room == start || m.Room == end {
+				continue
+			}
+			if prev, ok := seen[m.Room]; ok {
+				t.Errorf("turn %d: ants %d and %d both in room %q", ti+1, prev, m.AntID, m.Room)
+			}
+			seen[m.Room] = m.AntID
+		}
+	}
+}
+
+// verifyTunnelOnce checks no tunnel is used more than once per turn.
+// It reconstructs which tunnel each ant used by tracking each ant's previous room.
+func verifyTunnelOnce(t *testing.T, c *graph.Colony, turns [][]graph.Move) {
+	t.Helper()
+	prevRoom := make(map[int]string)
+	for id := 1; id <= c.Ants; id++ {
+		prevRoom[id] = c.Start
+	}
+	for ti, turn := range turns {
+		type tunnel struct{ a, b string }
+		used := make(map[tunnel]int)
+		for _, m := range turn {
+			from := prevRoom[m.AntID]
+			a, b := from, m.Room
+			if a > b {
+				a, b = b, a
+			}
+			key := tunnel{a, b}
+			if prev, ok := used[key]; ok {
+				t.Errorf("turn %d: tunnel %s-%s used by ants %d and %d", ti+1, a, b, prev, m.AntID)
+			}
+			used[key] = m.AntID
+			prevRoom[m.AntID] = m.Room
+		}
+	}
+}
+
 // verifyAllAntsReachEnd checks that every ant ID 1..c.Ants appears in end
 // exactly once across all turns, and never moves after reaching end.
 func verifyAllAntsReachEnd(t *testing.T, c *graph.Colony, turns [][]graph.Move) {
@@ -101,6 +146,50 @@ func TestSimulateAllAntsReachEnd(t *testing.T) {
 	}
 	turns := Simulate(c, paths)
 	verifyAllAntsReachEnd(t, c, turns)
+}
+
+// TestSimulateNoCollision verifies verifyNoCollision passes on two parallel paths.
+func TestSimulateNoCollision(t *testing.T) {
+	c := &graph.Colony{
+		Ants:  4,
+		Start: "start",
+		End:   "end",
+		Rooms: map[string]*graph.Room{
+			"start": {Name: "start"},
+			"a":     {Name: "a"},
+			"b":     {Name: "b"},
+			"end":   {Name: "end"},
+		},
+		Links: map[string][]string{},
+	}
+	paths := []graph.Path{
+		{"start", "a", "end"},
+		{"start", "b", "end"},
+	}
+	turns := Simulate(c, paths)
+	verifyNoCollision(t, turns, c.Start, c.End)
+}
+
+// TestSimulateTunnelOncePerTurn verifies verifyTunnelOnce passes on two parallel paths.
+func TestSimulateTunnelOncePerTurn(t *testing.T) {
+	c := &graph.Colony{
+		Ants:  4,
+		Start: "start",
+		End:   "end",
+		Rooms: map[string]*graph.Room{
+			"start": {Name: "start"},
+			"a":     {Name: "a"},
+			"b":     {Name: "b"},
+			"end":   {Name: "end"},
+		},
+		Links: map[string][]string{},
+	}
+	paths := []graph.Path{
+		{"start", "a", "end"},
+		{"start", "b", "end"},
+	}
+	turns := Simulate(c, paths)
+	verifyTunnelOnce(t, c, turns)
 }
 
 // TestSimulateThreeAntsTwoPaths verifies staggered pipeline assignment.
