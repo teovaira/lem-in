@@ -227,7 +227,10 @@ func TestSimulateThreeAntsTwoPaths(t *testing.T) {
 	// turn 1: ant1→a, ant3→b
 	// turn 2: ant1→end, ant2→a, ant3→cc
 	// turn 3: ant2→end, ant3→end
-	type move struct{ id int; room string }
+	type move struct {
+		id   int
+		room string
+	}
 	wantTurns := [][]move{
 		{{1, "a"}, {3, "b"}},
 		{{1, "end"}, {2, "a"}, {3, "cc"}},
