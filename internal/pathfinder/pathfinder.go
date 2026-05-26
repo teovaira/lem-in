@@ -10,18 +10,19 @@ import (
 )
 
 type edge struct {
-	to, cap, rev int
+	to, cap, origCap, rev int
 }
 
 func addEdge(g [][]edge, u, v, cap int) {
-	g[u] = append(g[u], edge{v, cap, len(g[v])})
-	g[v] = append(g[v], edge{u, 0, len(g[u]) - 1})
+	fwdRev := len(g[v])
+	revRev := len(g[u])
+	g[u] = append(g[u], edge{v, cap, cap, fwdRev})
+	g[v] = append(g[v], edge{u, 0, 0, revRev})
 }
 
 // buildFlowGraph builds the node-split residual graph.
 // Returns graph, source ID, sink ID, and room-name slice indexed by nodeID/2.
 func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) {
-	// assign a stable index to each room
 	roomNames := make([]string, 0, len(c.Rooms))
 	for name := range c.Rooms {
 		roomNames = append(roomNames, name)
@@ -51,7 +52,7 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 		addEdge(g, in, out, cap)
 	}
 
-	// tunnel edges: a_out -> b_in (both directions, undirected)
+	// tunnel edges: a_out -> b_in (both directions)
 	sortedKeys := make([]string, 0, len(c.Links))
 	for k := range c.Links {
 		sortedKeys = append(sortedKeys, k)
@@ -63,7 +64,7 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 		copy(neighbours, c.Links[a])
 		sort.Strings(neighbours)
 		for _, b := range neighbours {
-			if idx[a] < idx[b] { // add each undirected edge once
+			if idx[a] < idx[b] {
 				addEdge(g, idx[a]*2+1, idx[b]*2, 1)
 				addEdge(g, idx[b]*2+1, idx[a]*2, 1)
 			}
@@ -75,8 +76,8 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 	return
 }
 
-// bfs finds one augmenting path from src to snk.
-// Returns parent array (parent[node] = edge index used), or nil if no path.
+// bfs finds one augmenting path from src to snk in the residual graph.
+// Returns parent array (encoded as edgeIndex<<20 | fromNode), or nil if no path.
 func bfs(g [][]edge, src, snk int) []int {
 	parent := make([]int, len(g))
 	for i := range parent {
@@ -89,7 +90,7 @@ func bfs(g [][]edge, src, snk int) []int {
 		queue = queue[1:]
 		for i, e := range g[u] {
 			if e.cap > 0 && parent[e.to] == -1 {
-				parent[e.to] = i<<20 | u // encode: edge index + from node
+				parent[e.to] = i<<20 | u
 				if e.to == snk {
 					return parent
 				}
@@ -100,16 +101,13 @@ func bfs(g [][]edge, src, snk int) []int {
 	return nil
 }
 
-// extractPaths runs Edmonds-Karp to completion and returns all augmenting paths as room-name slices.
-func extractPaths(c *graph.Colony, g [][]edge, src, snk int, names []string) []graph.Path {
-	var paths []graph.Path
+// maxFlow runs Edmonds-Karp to completion, saturating all augmenting paths.
+func maxFlow(g [][]edge, src, snk int) {
 	for {
 		parent := bfs(g, src, snk)
 		if parent == nil {
 			break
 		}
-		// push flow=1 and record path
-		var nodes []int
 		cur := snk
 		for cur != src {
 			encoded := parent[cur]
@@ -117,24 +115,90 @@ func extractPaths(c *graph.Colony, g [][]edge, src, snk int, names []string) []g
 			ei := encoded >> 20
 			g[from][ei].cap--
 			g[cur][g[from][ei].rev].cap++
-			nodes = append(nodes, cur)
 			cur = from
 		}
-		nodes = append(nodes, src)
-		// reverse
-		for i, j := 0, len(nodes)-1; i < j; i, j = i+1, j-1 {
-			nodes[i], nodes[j] = nodes[j], nodes[i]
+	}
+}
+
+// extractPaths traces vertex-disjoint paths from src to snk using edges that carry flow
+// (origCap > 0 and cap < origCap). Uses DFS with backtracking to find each path.
+func extractPaths(g [][]edge, src, snk int, names []string) []graph.Path {
+	var paths []graph.Path
+	for {
+		path := tracePath(g, src, snk)
+		if path == nil {
+			break
 		}
 		// convert node IDs to room names: only _out nodes (odd) represent a room crossing
-		var path graph.Path
-		for _, node := range nodes {
-			if node%2 == 1 { // _out node
-				path = append(path, names[node/2])
+		var p graph.Path
+		for _, node := range path {
+			if node%2 == 1 {
+				p = append(p, names[node/2])
 			}
 		}
-		paths = append(paths, path)
+		paths = append(paths, p)
 	}
 	return paths
+}
+
+// tracePath finds one path from src to snk following edges with flow (origCap>0, cap<origCap),
+// then cancels that flow so the same path is not reused.
+func tracePath(g [][]edge, src, snk int) []int {
+	// DFS using edges that have flow: origCap > 0 && cap < origCap
+	visited := make([]bool, len(g))
+	stack := []int{src}
+	parent := make([]int, len(g))
+	parentEdge := make([]int, len(g))
+	for i := range parent {
+		parent[i] = -1
+	}
+	parent[src] = -2
+	visited[src] = true
+
+	// iterative DFS
+	found := false
+	for len(stack) > 0 && !found {
+		u := stack[len(stack)-1]
+		advanced := false
+		for i, e := range g[u] {
+			if e.origCap > 0 && e.cap < e.origCap && !visited[e.to] {
+				parent[e.to] = u
+				parentEdge[e.to] = i
+				visited[e.to] = true
+				if e.to == snk {
+					found = true
+					break
+				}
+				stack = append(stack, e.to)
+				advanced = true
+				break
+			}
+		}
+		if !advanced && !found {
+			stack = stack[:len(stack)-1]
+		}
+	}
+
+	if !found {
+		return nil
+	}
+
+	// reconstruct path and cancel flow
+	var nodes []int
+	cur := snk
+	for cur != src {
+		nodes = append(nodes, cur)
+		from := parent[cur]
+		ei := parentEdge[cur]
+		g[from][ei].cap++
+		g[cur][g[from][ei].rev].cap--
+		cur = from
+	}
+	nodes = append(nodes, src)
+	for i, j := 0, len(nodes)-1; i < j; i, j = i+1, j-1 {
+		nodes[i], nodes[j] = nodes[j], nodes[i]
+	}
+	return nodes
 }
 
 // computeTurns returns the number of turns for nAnts ants on the given paths
@@ -164,7 +228,8 @@ func computeTurns(paths []graph.Path, nAnts int) int {
 // Returns error if no path exists from Start to End.
 func FindPaths(c *graph.Colony) ([]graph.Path, error) {
 	g, src, snk, names := buildFlowGraph(c)
-	paths := extractPaths(c, g, src, snk, names)
+	maxFlow(g, src, snk)
+	paths := extractPaths(g, src, snk, names)
 	if len(paths) == 0 {
 		return nil, errors.New("no path between start and end")
 	}
