@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"lemin/internal/graph"
+	"lemin/internal/parser"
+	"lemin/internal/pathfinder"
 )
 
 // TestSimulateOneAntOnePath is the simplest possible simulator test.
@@ -247,4 +249,79 @@ func TestSimulateThreeAntsTwoPaths(t *testing.T) {
 			}
 		}
 	}
+}
+
+// exampleTurns parses a testdata file, finds paths, and simulates.
+// Declared alongside its callers so the imports are used in the same block.
+func exampleTurns(t *testing.T, file string) (*graph.Colony, [][]graph.Move) {
+	t.Helper()
+	c, err := parser.Parse(file)
+	if err != nil {
+		t.Fatalf("%s: parse: %v", file, err)
+	}
+	paths, err := pathfinder.FindPaths(c)
+	if err != nil {
+		t.Fatalf("%s: pathfinder: %v", file, err)
+	}
+	return c, Simulate(c, paths)
+}
+
+func TestSimulateExample00(t *testing.T) {
+	c, turns := exampleTurns(t, "../../testdata/example00.txt")
+	if len(turns) > 6 {
+		t.Errorf("want ≤6 turns, got %d", len(turns))
+	}
+	verifyAllAntsReachEnd(t, c, turns)
+	verifyNoCollision(t, turns, c.Start, c.End)
+	verifyTunnelOnce(t, c, turns)
+}
+
+func TestSimulateExample01(t *testing.T) {
+	c, turns := exampleTurns(t, "../../testdata/example01.txt")
+	if len(turns) > 8 {
+		t.Errorf("want ≤8 turns, got %d", len(turns))
+	}
+	verifyAllAntsReachEnd(t, c, turns)
+	verifyNoCollision(t, turns, c.Start, c.End)
+	verifyTunnelOnce(t, c, turns)
+}
+
+func TestSimulateExample02(t *testing.T) {
+	c, turns := exampleTurns(t, "../../testdata/example02.txt")
+	if len(turns) > 11 {
+		t.Errorf("want ≤11 turns, got %d", len(turns))
+	}
+	verifyAllAntsReachEnd(t, c, turns)
+	verifyNoCollision(t, turns, c.Start, c.End)
+	verifyTunnelOnce(t, c, turns)
+}
+
+func TestSimulateExample03(t *testing.T) {
+	c, turns := exampleTurns(t, "../../testdata/example03.txt")
+	if len(turns) > 6 {
+		t.Errorf("want ≤6 turns, got %d", len(turns))
+	}
+	verifyAllAntsReachEnd(t, c, turns)
+	verifyNoCollision(t, turns, c.Start, c.End)
+	verifyTunnelOnce(t, c, turns)
+}
+
+func TestSimulateExample04(t *testing.T) {
+	c, turns := exampleTurns(t, "../../testdata/example04.txt")
+	if len(turns) > 6 {
+		t.Errorf("want ≤6 turns, got %d", len(turns))
+	}
+	verifyAllAntsReachEnd(t, c, turns)
+	verifyNoCollision(t, turns, c.Start, c.End)
+	verifyTunnelOnce(t, c, turns)
+}
+
+func TestSimulateExample05(t *testing.T) {
+	c, turns := exampleTurns(t, "../../testdata/example05.txt")
+	if len(turns) > 8 {
+		t.Errorf("want ≤8 turns, got %d", len(turns))
+	}
+	verifyAllAntsReachEnd(t, c, turns)
+	verifyNoCollision(t, turns, c.Start, c.End)
+	verifyTunnelOnce(t, c, turns)
 }
