@@ -178,7 +178,6 @@ func parseRoom(line string, c *graph.Colony) (*graph.Room, error) {
 	}
 	room := &graph.Room{Name: name, X: x, Y: y}
 	c.Rooms[name] = room
-	c.Links[name] = []string{}
 	return room, nil
 }
 
