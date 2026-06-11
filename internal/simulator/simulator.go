@@ -12,6 +12,7 @@ func Simulate(c *graph.Colony, paths []graph.Path) [][]graph.Move {
 	antPath := make([]int, c.Ants+1)
 	antOffset := make([]int, c.Ants+1)
 	load := make([]int, len(paths))
+	totalTurns := 0
 
 	// Greedy assignment: assign each ant to the path with the earliest finish turn.
 	for id := 1; id <= c.Ants; id++ {
@@ -26,12 +27,8 @@ func Simulate(c *graph.Colony, paths []graph.Path) [][]graph.Move {
 		}
 		antPath[id] = best
 		antOffset[id] = load[best]
+		finish := load[best] + len(paths[best]) - 1
 		load[best]++
-	}
-
-	totalTurns := 0
-	for id := 1; id <= c.Ants; id++ {
-		finish := antOffset[id] + len(paths[antPath[id]]) - 1
 		if finish > totalTurns {
 			totalTurns = finish
 		}
