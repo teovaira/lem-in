@@ -116,6 +116,20 @@ func TestFindPathsDirectLink(t *testing.T) {
 	}
 }
 
+func TestFindPathsOneAnt(t *testing.T) {
+	c := makeColony(1, "s", "e",
+		[][3]string{{"s", "0", "0"}, {"a", "1", "1"}, {"b", "1", "-1"}, {"e", "2", "0"}},
+		[][2]string{{"s", "a"}, {"a", "e"}, {"s", "b"}, {"b", "e"}},
+	)
+	paths, err := FindPaths(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 1 {
+		t.Errorf("1 ant: want 1 path selected, got %d", len(paths))
+	}
+}
+
 func TestFindPathsOptimalSubset(t *testing.T) {
 	// 3 paths: A=[s,a,e] (len=3), B=[s,b,c,e] (len=4), C=[s,d,...,e] (len=12).
 	// For 4 ants:
