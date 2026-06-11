@@ -120,7 +120,7 @@ func verifyAllAntsReachEnd(t *testing.T, c *graph.Colony, turns [][]graph.Move) 
 	}
 }
 
-func TestSimulateAllAntsReachEnd(t *testing.T) {
+func TestSimulateFourAntsTwoPaths(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  4,
 		Start: "start",
@@ -139,47 +139,7 @@ func TestSimulateAllAntsReachEnd(t *testing.T) {
 	}
 	turns := Simulate(c, paths)
 	verifyAllAntsReachEnd(t, c, turns)
-}
-
-func TestSimulateNoCollision(t *testing.T) {
-	c := &graph.Colony{
-		Ants:  4,
-		Start: "start",
-		End:   "end",
-		Rooms: map[string]*graph.Room{
-			"start": {Name: "start"},
-			"a":     {Name: "a"},
-			"b":     {Name: "b"},
-			"end":   {Name: "end"},
-		},
-		Links: map[string][]string{},
-	}
-	paths := []graph.Path{
-		{"start", "a", "end"},
-		{"start", "b", "end"},
-	}
-	turns := Simulate(c, paths)
 	verifyNoCollision(t, turns, c.Start, c.End)
-}
-
-func TestSimulateTunnelOncePerTurn(t *testing.T) {
-	c := &graph.Colony{
-		Ants:  4,
-		Start: "start",
-		End:   "end",
-		Rooms: map[string]*graph.Room{
-			"start": {Name: "start"},
-			"a":     {Name: "a"},
-			"b":     {Name: "b"},
-			"end":   {Name: "end"},
-		},
-		Links: map[string][]string{},
-	}
-	paths := []graph.Path{
-		{"start", "a", "end"},
-		{"start", "b", "end"},
-	}
-	turns := Simulate(c, paths)
 	verifyTunnelOnce(t, c, turns)
 }
 
