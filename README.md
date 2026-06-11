@@ -37,7 +37,7 @@ Requires Go 1.22+. No third-party dependencies.
 Or without building:
 
 ```bash
-go run . testdata/example00.txt
+go run ./cmd/lem-in testdata/example00.txt
 ```
 
 ---
