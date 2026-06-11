@@ -1,4 +1,5 @@
-// Package parser reads and validates lem-in colony files.
+// Package parser reads, parses, and fully validates lem-in colony input files,
+// returning a populated graph.Colony or a descriptive error.
 package parser
 
 import (
@@ -11,8 +12,9 @@ import (
 	"lemin/internal/graph"
 )
 
-// Parse reads and fully validates the colony file at the given path.
-// Returns a populated *Colony or a descriptive error.
+// Parse reads and fully validates the colony file at filename.
+// Returns a populated *graph.Colony on success, or an error whose message
+// is the suffix string expected by main (e.g. "no start room found").
 func Parse(filename string) (*graph.Colony, error) {
 	f, err := os.Open(filename)
 	if err != nil {
@@ -137,12 +139,15 @@ func Parse(filename string) (*graph.Colony, error) {
 	return c, nil
 }
 
-// looksLikeRoom returns true if the line has exactly 3 space-separated fields.
-// Coordinate validation is left to parseRoom so bad coords produce a proper error.
+// looksLikeRoom reports whether line has exactly 3 space-separated fields.
+// Coordinate validation is left to parseRoom so bad coords produce a proper error
+// rather than silently falling through to the unknown-line branch.
 func looksLikeRoom(line string) bool {
 	return len(strings.Fields(line)) == 3
 }
 
+// isLinkLine reports whether line is a valid tunnel declaration:
+// no spaces, exactly one hyphen, and a non-empty name on each side.
 func isLinkLine(line string) bool {
 	if strings.Contains(line, " ") {
 		return false
@@ -151,6 +156,9 @@ func isLinkLine(line string) bool {
 	return len(parts) == 2 && parts[0] != "" && parts[1] != ""
 }
 
+// parseRoom validates and registers a room from line into c.
+// Returns the new *graph.Room on success, or an error for invalid coordinates,
+// a forbidden name prefix (L or #), or a duplicate room name.
 func parseRoom(line string, c *graph.Colony) (*graph.Room, error) {
 	fields := strings.Fields(line)
 	x, err1 := strconv.Atoi(fields[1])
@@ -174,6 +182,8 @@ func parseRoom(line string, c *graph.Colony) (*graph.Room, error) {
 	return room, nil
 }
 
+// parseLink validates and registers a tunnel from line into c.
+// Returns an error for self-links, unknown room names, or duplicate tunnels.
 func parseLink(line string, c *graph.Colony) error {
 	parts := strings.SplitN(line, "-", 2)
 	a, b := parts[0], parts[1]

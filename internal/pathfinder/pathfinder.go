@@ -1,4 +1,5 @@
-// Package pathfinder finds the optimal set of non-overlapping paths through a colony.
+// Package pathfinder finds the optimal set of vertex-disjoint paths through a colony
+// using Edmonds-Karp max-flow with node splitting, minimising total simulation turns.
 package pathfinder
 
 import (
@@ -9,10 +10,15 @@ import (
 	"lemin/internal/graph"
 )
 
+// edge is a directed edge in the residual flow graph.
+// origCap records the original capacity so tracePath can identify edges that carry flow
+// (origCap > 0 && cap < origCap) after maxFlow has run to completion.
 type edge struct {
 	to, cap, origCap, rev int
 }
 
+// addEdge adds a directed edge u→v with the given capacity to g,
+// along with its zero-capacity reverse edge v→u for the residual graph.
 func addEdge(g [][]edge, u, v, cap int) {
 	fwdRev := len(g[v])
 	revRev := len(g[u])
@@ -20,8 +26,11 @@ func addEdge(g [][]edge, u, v, cap int) {
 	g[v] = append(g[v], edge{u, 0, 0, revRev})
 }
 
-// buildFlowGraph builds the node-split residual graph.
-// Returns graph, source ID, sink ID, and room-name slice indexed by nodeID/2.
+// buildFlowGraph constructs a node-split residual graph from c.
+// Each room i becomes two nodes: in=2i and out=2i+1, connected by a capacity-1 edge
+// (capacity c.Ants for start and end) to enforce the one-ant-per-room constraint.
+// Returns the graph g, source node src (Start_in), sink node snk (End_out),
+// and names, a slice mapping nodeID/2 to room name.
 func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) {
 	roomNames := make([]string, 0, len(c.Rooms))
 	for name := range c.Rooms {
@@ -74,8 +83,9 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 	return
 }
 
-// bfs finds one augmenting path from src to snk in the residual graph.
-// Returns parent array (encoded as edgeIndex<<20 | fromNode), or nil if no path.
+// bfs finds one shortest augmenting path from src to snk in residual graph g.
+// Returns a parent array where parent[node] encodes the incoming edge as
+// edgeIndex<<20 | fromNode, or nil if snk is unreachable.
 func bfs(g [][]edge, src, snk int) []int {
 	parent := make([]int, len(g))
 	for i := range parent {
@@ -99,7 +109,8 @@ func bfs(g [][]edge, src, snk int) []int {
 	return nil
 }
 
-// maxFlow runs Edmonds-Karp to completion, saturating all augmenting paths.
+// maxFlow runs Edmonds-Karp on g until no augmenting path from src to snk exists,
+// saturating all flow. Modifies g in place.
 func maxFlow(g [][]edge, src, snk int) {
 	for {
 		parent := bfs(g, src, snk)
@@ -118,8 +129,10 @@ func maxFlow(g [][]edge, src, snk int) {
 	}
 }
 
-// extractPaths traces vertex-disjoint paths from src to snk using edges that carry flow
-// (origCap > 0 and cap < origCap). Uses DFS with backtracking to find each path.
+// extractPaths recovers all vertex-disjoint paths from src to snk in g by
+// repeatedly calling tracePath until no flow-carrying path remains.
+// names maps nodeID/2 to room name and is used to convert node IDs to graph.Path.
+// Returns the slice of paths; each path is a []string from Start to End inclusive.
 func extractPaths(g [][]edge, src, snk int, names []string) []graph.Path {
 	var paths []graph.Path
 	for {
@@ -138,8 +151,9 @@ func extractPaths(g [][]edge, src, snk int, names []string) []graph.Path {
 	return paths
 }
 
-// tracePath finds one path from src to snk following edges with flow (origCap>0, cap<origCap),
-// then cancels that flow so the same path is not reused.
+// tracePath finds one path from src to snk in g by following edges that carry flow
+// (origCap > 0 && cap < origCap), then cancels that flow so subsequent calls
+// yield different paths. Returns the node sequence src…snk, or nil if none exists.
 func tracePath(g [][]edge, src, snk int) []int {
 	visited := make([]bool, len(g))
 	stack := []int{src}
@@ -195,8 +209,9 @@ func tracePath(g [][]edge, src, snk int) []int {
 	return nodes
 }
 
-// computeTurns returns the number of turns for nAnts ants on the given paths
-// using greedy assignment (assign each ant to the path minimising its finish turn).
+// computeTurns returns the minimum number of turns required to move nAnts ants
+// across paths using greedy assignment: each ant is placed on the path that
+// minimises its personal finish turn (path length - 1 + current load on that path).
 func computeTurns(paths []graph.Path, nAnts int) int {
 	load := make([]int, len(paths))
 	maxTurn := 0
@@ -218,8 +233,9 @@ func computeTurns(paths []graph.Path, nAnts int) int {
 	return maxTurn
 }
 
-// FindPaths returns the optimal set of non-overlapping paths minimising total turns for c.Ants ants.
-// Returns error if no path exists from Start to End.
+// FindPaths returns the optimal subset of vertex-disjoint paths through c that
+// minimises the total number of simulation turns for c.Ants ants.
+// Paths are sorted shortest-first. Returns an error if no path exists from Start to End.
 func FindPaths(c *graph.Colony) ([]graph.Path, error) {
 	g, src, snk, names := buildFlowGraph(c)
 	maxFlow(g, src, snk)

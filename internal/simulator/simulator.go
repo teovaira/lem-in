@@ -1,10 +1,13 @@
+// Package simulator assigns ants to paths and generates the turn-by-turn move sequence.
 package simulator
 
 import "lemin/internal/graph"
 
-// Simulate assigns ants to paths and produces the full turn sequence.
+// Simulate assigns the ants in c to paths using greedy scheduling and returns
+// the complete move sequence as a slice of turns.
 // paths must be sorted shortest-first (as returned by FindPaths).
-// Outer slice = turns. Inner slice = moves in that turn, sorted by AntID ascending.
+// Each inner slice contains the moves for one turn, ordered by AntID ascending.
+// Moves to the start room are never recorded; an ant that reaches End stops moving.
 func Simulate(c *graph.Colony, paths []graph.Path) [][]graph.Move {
 	antPath := make([]int, c.Ants+1)
 	antOffset := make([]int, c.Ants+1)
