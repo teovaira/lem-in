@@ -20,10 +20,10 @@ type edge struct {
 // addEdge adds a directed edge u→v with the given capacity to g,
 // along with its zero-capacity reverse edge v→u for the residual graph.
 func addEdge(g [][]edge, u, v, cap int) {
-	fwdRev := len(g[v])
-	revRev := len(g[u])
-	g[u] = append(g[u], edge{v, cap, cap, fwdRev})
-	g[v] = append(g[v], edge{u, 0, 0, revRev})
+	revOfFwd := len(g[v])
+	revOfRev := len(g[u])
+	g[u] = append(g[u], edge{v, cap, cap, revOfFwd})
+	g[v] = append(g[v], edge{u, 0, 0, revOfRev})
 }
 
 // buildFlowGraph constructs a node-split residual graph from c.
@@ -46,10 +46,6 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 
 	n := len(roomNames)
 	g = make([][]edge, n*2)
-	for i := range g {
-		g[i] = []edge{}
-	}
-
 	for _, name := range roomNames {
 		i := idx[name]
 		in, out := i*2, i*2+1
@@ -60,13 +56,7 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 		addEdge(g, in, out, cap)
 	}
 
-	sortedKeys := make([]string, 0, len(c.Links))
-	for k := range c.Links {
-		sortedKeys = append(sortedKeys, k)
-	}
-	sort.Strings(sortedKeys)
-
-	for _, a := range sortedKeys {
+	for _, a := range roomNames {
 		neighbours := make([]string, len(c.Links[a]))
 		copy(neighbours, c.Links[a])
 		sort.Strings(neighbours)
