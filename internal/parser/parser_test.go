@@ -322,3 +322,14 @@ func TestParseErrorStartFollowedByLink(t *testing.T) {
 		t.Errorf("want 'no start room' in error, got %q", err.Error())
 	}
 }
+
+func TestParseErrorEndFollowedByLink(t *testing.T) {
+	path := writeTempFile(t, "1\n##start\na 0 0\n##end\na-b\nb 1 0\na-b\n")
+	_, err := Parse(path)
+	if err == nil {
+		t.Fatal("expected error when ##end is followed by a link line")
+	}
+	if !strings.Contains(err.Error(), "no end room") {
+		t.Errorf("want 'no end room' in error, got %q", err.Error())
+	}
+}
