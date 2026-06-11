@@ -41,7 +41,6 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 		g[i] = []edge{}
 	}
 
-	// node-split edges: room_in -> room_out
 	for _, name := range roomNames {
 		i := idx[name]
 		in, out := i*2, i*2+1
@@ -52,7 +51,6 @@ func buildFlowGraph(c *graph.Colony) (g [][]edge, src, snk int, names []string) 
 		addEdge(g, in, out, cap)
 	}
 
-	// tunnel edges: a_out -> b_in (both directions)
 	sortedKeys := make([]string, 0, len(c.Links))
 	for k := range c.Links {
 		sortedKeys = append(sortedKeys, k)
@@ -129,7 +127,6 @@ func extractPaths(g [][]edge, src, snk int, names []string) []graph.Path {
 		if path == nil {
 			break
 		}
-		// convert node IDs to room names: only _out nodes (odd) represent a room crossing
 		var p graph.Path
 		for _, node := range path {
 			if node%2 == 1 {
@@ -144,7 +141,6 @@ func extractPaths(g [][]edge, src, snk int, names []string) []graph.Path {
 // tracePath finds one path from src to snk following edges with flow (origCap>0, cap<origCap),
 // then cancels that flow so the same path is not reused.
 func tracePath(g [][]edge, src, snk int) []int {
-	// DFS using edges that have flow: origCap > 0 && cap < origCap
 	visited := make([]bool, len(g))
 	stack := []int{src}
 	parent := make([]int, len(g))
@@ -155,7 +151,6 @@ func tracePath(g [][]edge, src, snk int) []int {
 	parent[src] = -2
 	visited[src] = true
 
-	// iterative DFS
 	found := false
 	for len(stack) > 0 && !found {
 		u := stack[len(stack)-1]
@@ -183,7 +178,6 @@ func tracePath(g [][]edge, src, snk int) []int {
 		return nil
 	}
 
-	// reconstruct path and cancel flow
 	var nodes []int
 	cur := snk
 	for cur != src {
@@ -234,7 +228,6 @@ func FindPaths(c *graph.Colony) ([]graph.Path, error) {
 		return nil, errors.New("no path between start and end")
 	}
 
-	// sort paths: shortest first, tie-break lexicographically
 	sort.Slice(paths, func(i, j int) bool {
 		if len(paths[i]) != len(paths[j]) {
 			return len(paths[i]) < len(paths[j])
@@ -242,7 +235,6 @@ func FindPaths(c *graph.Colony) ([]graph.Path, error) {
 		return strings.Join(paths[i], ",") < strings.Join(paths[j], ",")
 	})
 
-	// find the prefix [0:k] that minimises turns
 	best := computeTurns(paths[:1], c.Ants)
 	bestK := 1
 	for k := 2; k <= len(paths); k++ {

@@ -31,7 +31,6 @@ func Parse(filename string) (*graph.Colony, error) {
 		Links: make(map[string][]string),
 	}
 
-	// Step 2: find the ant count — first non-blank, non-single-# line
 	pos := 0
 	for pos < len(lines) {
 		line := lines[pos]
@@ -58,7 +57,6 @@ func Parse(filename string) (*graph.Colony, error) {
 		return nil, errors.New("invalid number of ants")
 	}
 
-	// Step 3: state machine for remaining lines
 	nextIsStart := false
 	nextIsEnd := false
 	startSeen := false
@@ -145,7 +143,6 @@ func looksLikeRoom(line string) bool {
 	return len(strings.Fields(line)) == 3
 }
 
-// isLinkLine returns true if the line is a valid link format (no spaces, one hyphen, non-empty sides).
 func isLinkLine(line string) bool {
 	if strings.Contains(line, " ") {
 		return false
@@ -154,7 +151,6 @@ func isLinkLine(line string) bool {
 	return len(parts) == 2 && parts[0] != "" && parts[1] != ""
 }
 
-// parseRoom validates and adds a room to the colony. Returns the new Room or an error.
 func parseRoom(line string, c *graph.Colony) (*graph.Room, error) {
 	fields := strings.Fields(line)
 	x, err1 := strconv.Atoi(fields[1])
@@ -178,7 +174,6 @@ func parseRoom(line string, c *graph.Colony) (*graph.Room, error) {
 	return room, nil
 }
 
-// parseLink validates and adds a tunnel between two rooms to the colony.
 func parseLink(line string, c *graph.Colony) error {
 	parts := strings.SplitN(line, "-", 2)
 	a, b := parts[0], parts[1]

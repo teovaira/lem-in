@@ -6,15 +6,11 @@ import "lemin/internal/graph"
 // paths must be sorted shortest-first (as returned by FindPaths).
 // Outer slice = turns. Inner slice = moves in that turn, sorted by AntID ascending.
 func Simulate(c *graph.Colony, paths []graph.Path) [][]graph.Move {
-	// antPath[id] = which path index ant id was assigned to (1-indexed ant IDs).
 	antPath := make([]int, c.Ants+1)
-	// antOffset[id] = how many turns ant id waits before entering (0 = enters on turn 1).
 	antOffset := make([]int, c.Ants+1)
-	// load[i] = how many ants are already queued on paths[i].
 	load := make([]int, len(paths))
 
-	// Greedy assignment: for each ant pick the path that gives the earliest finish turn.
-	// Finish turn for ant on paths[i] = len(paths[i]) - 1 + load[i].
+	// Greedy assignment: assign each ant to the path with the earliest finish turn.
 	for id := 1; id <= c.Ants; id++ {
 		best := 0
 		bestTurns := len(paths[0]) - 1 + load[0]
@@ -30,7 +26,6 @@ func Simulate(c *graph.Colony, paths []graph.Path) [][]graph.Move {
 		load[best]++
 	}
 
-	// Compute the total number of turns needed.
 	totalTurns := 0
 	for id := 1; id <= c.Ants; id++ {
 		finish := antOffset[id] + len(paths[antPath[id]]) - 1
@@ -44,7 +39,6 @@ func Simulate(c *graph.Colony, paths []graph.Path) [][]graph.Move {
 		turns[t] = []graph.Move{}
 	}
 
-	// Generate moves turn by turn.
 	// Ant id on path p with offset o:
 	//   - enters path on turn o+1 (moves to p[1])
 	//   - reaches end on turn o+len(p)-1 (moves to p[len(p)-1])
