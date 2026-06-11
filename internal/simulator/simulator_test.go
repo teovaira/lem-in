@@ -8,14 +8,6 @@ import (
 	"lemin/internal/pathfinder"
 )
 
-// TestSimulateOneAntOnePath is the simplest possible simulator test.
-// One ant. One path: start -> a -> b -> end.
-// The path has length 4 (4 room names), so the ant makes 3 moves.
-// Expected turns:
-//
-//	turn 1: L1-a
-//	turn 2: L1-b
-//	turn 3: L1-end
 func TestSimulateOneAntOnePath(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  1,
@@ -128,7 +120,6 @@ func verifyAllAntsReachEnd(t *testing.T, c *graph.Colony, turns [][]graph.Move) 
 	}
 }
 
-// TestSimulateAllAntsReachEnd verifies every ant reaches end exactly once.
 func TestSimulateAllAntsReachEnd(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  4,
@@ -150,7 +141,6 @@ func TestSimulateAllAntsReachEnd(t *testing.T) {
 	verifyAllAntsReachEnd(t, c, turns)
 }
 
-// TestSimulateNoCollision verifies verifyNoCollision passes on two parallel paths.
 func TestSimulateNoCollision(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  4,
@@ -172,7 +162,6 @@ func TestSimulateNoCollision(t *testing.T) {
 	verifyNoCollision(t, turns, c.Start, c.End)
 }
 
-// TestSimulateTunnelOncePerTurn verifies verifyTunnelOnce passes on two parallel paths.
 func TestSimulateTunnelOncePerTurn(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  4,
@@ -194,10 +183,6 @@ func TestSimulateTunnelOncePerTurn(t *testing.T) {
 	verifyTunnelOnce(t, c, turns)
 }
 
-// TestSimulateThreeAntsTwoPaths verifies staggered pipeline assignment.
-// 3 ants, 2 paths: path0=[start,a,end] (len 3), path1=[start,b,c,end] (len 4).
-// Greedy: ant1→path0 offset0, ant2→path0 offset1, ant3→path1 offset0.
-// Total turns = 3.
 func TestSimulateThreeAntsTwoPaths(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  3,
@@ -254,8 +239,6 @@ func TestSimulateThreeAntsTwoPaths(t *testing.T) {
 	}
 }
 
-// exampleTurns parses a testdata file, finds paths, and simulates.
-// Declared alongside its callers so the imports are used in the same block.
 func exampleTurns(t *testing.T, file string) (*graph.Colony, [][]graph.Move) {
 	t.Helper()
 	c, err := parser.Parse(file)

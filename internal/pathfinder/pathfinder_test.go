@@ -11,7 +11,6 @@ import (
 	"lemin/internal/graph"
 )
 
-// loadColony is a minimal parser used only in tests.
 func loadColony(path string) (*graph.Colony, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -49,7 +48,6 @@ func loadColony(path string) (*graph.Colony, error) {
 		case line == "##end":
 			nextEnd = true
 		case strings.HasPrefix(line, "#"):
-			// comment, skip
 		case strings.Contains(line, "-") && !strings.Contains(line, " "):
 			parts := strings.SplitN(line, "-", 2)
 			a, b := parts[0], parts[1]
@@ -78,8 +76,6 @@ func loadColony(path string) (*graph.Colony, error) {
 	return c, nil
 }
 
-// makeColony builds a Colony from a compact description for unit tests.
-// rooms: "name x y", links: "a-b", start/end by name.
 func makeColony(ants int, start, end string, rooms [][3]string, links [][2]string) *graph.Colony {
 	c := &graph.Colony{
 		Ants:  ants,
@@ -134,7 +130,6 @@ func TestFindPathsTwoPaths(t *testing.T) {
 	if len(paths) != 2 {
 		t.Fatalf("want 2 paths, got %d", len(paths))
 	}
-	// no shared intermediate rooms
 	seen := map[string]bool{}
 	for _, p := range paths {
 		for _, r := range p[1 : len(p)-1] {
@@ -149,7 +144,7 @@ func TestFindPathsTwoPaths(t *testing.T) {
 func TestFindPathsNoPath(t *testing.T) {
 	c := makeColony(1, "start", "end",
 		[][3]string{{"start", "0", "0"}, {"end", "1", "0"}},
-		[][2]string{}, // no links
+		[][2]string{},
 	)
 	_, err := FindPaths(c)
 	if err == nil {
@@ -213,7 +208,6 @@ func TestFindPathsOptimalSubset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// optimal is 2 paths for 4 ants; 3 paths would be worse due to long path C
 	if len(paths) != 2 {
 		t.Errorf("expected 2 paths for 4 ants, got %d", len(paths))
 	}
@@ -269,12 +263,8 @@ func TestFindPathsExample04(t *testing.T) { testExampleTurns(t, "../../testdata/
 func TestFindPathsExample05(t *testing.T) { testExampleTurns(t, "../../testdata/example05.txt", 8) }
 
 func TestFindPathsPerformance100(t *testing.T) {
-	// Build a colony with 100 ants and 3 parallel paths of varying lengths.
 	rooms := [][3]string{{"s", "0", "0"}, {"e", "99", "0"}}
 	links := [][2]string{}
-	// path A: s -> a0..a9 -> e  (length 12)
-	// path B: s -> b0..b4 -> e  (length 7)
-	// path C: s -> c0..c19 -> e (length 22)
 	for i := 0; i < 10; i++ {
 		rooms = append(rooms, [3]string{"a" + strconv.Itoa(i), strconv.Itoa(i + 1), "1"})
 	}
@@ -312,7 +302,6 @@ func TestFindPathsPerformance100(t *testing.T) {
 }
 
 func TestFindPathsPerformance1000(t *testing.T) {
-	// 5 parallel paths, 1000 ants
 	rooms := [][3]string{{"s", "0", "0"}, {"e", "99", "0"}}
 	links := [][2]string{}
 	pathLens := []int{5, 8, 12, 20, 30}

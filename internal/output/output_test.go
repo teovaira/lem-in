@@ -12,7 +12,6 @@ func makeColony(rawLines []string) *graph.Colony {
 	return &graph.Colony{RawLines: rawLines}
 }
 
-// TestPrintRawLines verifies every RawLine appears in output.
 func TestPrintRawLines(t *testing.T) {
 	c := makeColony([]string{"4", "##start", "0 0 3", "##end", "1 8 3", "0-1"})
 	var buf bytes.Buffer
@@ -25,14 +24,12 @@ func TestPrintRawLines(t *testing.T) {
 	}
 }
 
-// TestPrintBlankLineSeparator verifies exactly one blank line between RawLines and turns.
 func TestPrintBlankLineSeparator(t *testing.T) {
 	c := makeColony([]string{"1", "##start", "0 0 0", "##end", "1 1 0", "0-1"})
 	turns := [][]graph.Move{{{AntID: 1, Room: "1"}}}
 	var buf bytes.Buffer
 	Print(&buf, c, turns)
 	lines := strings.Split(buf.String(), "\n")
-	// find the blank line (after RawLines, before turns)
 	blankCount := 0
 	for _, l := range lines {
 		if l == "" {
@@ -45,7 +42,6 @@ func TestPrintBlankLineSeparator(t *testing.T) {
 	}
 }
 
-// TestPrintTurnFormat verifies "L{id}-{room}" format, space-separated per turn.
 func TestPrintTurnFormat(t *testing.T) {
 	c := makeColony([]string{"2"})
 	turns := [][]graph.Move{
@@ -55,7 +51,6 @@ func TestPrintTurnFormat(t *testing.T) {
 	var buf bytes.Buffer
 	Print(&buf, c, turns)
 	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
-	// lines: "2", "", "L1-a L2-b", "L1-end L2-end"
 	if lines[2] != "L1-a L2-b" {
 		t.Errorf("turn 1: want %q, got %q", "L1-a L2-b", lines[2])
 	}
@@ -64,7 +59,6 @@ func TestPrintTurnFormat(t *testing.T) {
 	}
 }
 
-// TestPrintNoTrailingBlankLine verifies no extra blank line after the last turn.
 func TestPrintNoTrailingBlankLine(t *testing.T) {
 	c := makeColony([]string{"1"})
 	turns := [][]graph.Move{{{AntID: 1, Room: "end"}}}
@@ -76,7 +70,6 @@ func TestPrintNoTrailingBlankLine(t *testing.T) {
 	}
 }
 
-// TestPrintUsesWriter verifies output goes to the provided io.Writer, not stdout.
 func TestPrintUsesWriter(t *testing.T) {
 	c := makeColony([]string{"sentinel-line"})
 	var buf bytes.Buffer

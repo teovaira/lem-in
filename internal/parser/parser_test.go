@@ -8,7 +8,6 @@ import (
 	"lemin/internal/graph"
 )
 
-// writeTempFile creates a temp file with the given content and registers cleanup.
 func writeTempFile(t *testing.T, content string) string {
 	t.Helper()
 	f, err := os.CreateTemp("", "lemin_test_*.txt")
@@ -22,8 +21,6 @@ func writeTempFile(t *testing.T, content string) string {
 	t.Cleanup(func() { os.Remove(f.Name()) })
 	return f.Name()
 }
-
-// --- Valid input tests ---
 
 func TestParseExample00(t *testing.T) {
 	c, err := Parse("../../testdata/example00.txt")
@@ -48,7 +45,6 @@ func TestParseExample00(t *testing.T) {
 }
 
 func TestParseExample03(t *testing.T) {
-	// rooms appear BEFORE ##start in this file — must still parse correctly
 	c, err := Parse("../../testdata/example03.txt")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -83,7 +79,6 @@ func TestParseNumericRoomNames(t *testing.T) {
 }
 
 func TestParseRoomNamedStart(t *testing.T) {
-	// the word "start" is a valid room name — must not be confused with ##start
 	path := writeTempFile(t, "1\n##start\nstart 1 6\n##end\nend 5 6\nstart-end\n")
 	c, err := Parse(path)
 	if err != nil {
@@ -162,7 +157,6 @@ func TestParseSkipsBlankLines(t *testing.T) {
 }
 
 func TestParseStartFollowedByCommentThenRoom(t *testing.T) {
-	// ##start then a comment then a room — comment must not consume the flag
 	path := writeTempFile(t, "1\n##start\n#comment here\nmyroom 1 2\n##end\nother 3 4\nmyroom-other\n")
 	c, err := Parse(path)
 	if err != nil {
@@ -176,8 +170,6 @@ func TestParseStartFollowedByCommentThenRoom(t *testing.T) {
 		t.Error("comment between ##start and room must be in RawLines")
 	}
 }
-
-// --- Error tests ---
 
 func TestParseErrorNoFile(t *testing.T) {
 	_, err := Parse("/nonexistent/path/lemin_no_such_file.txt")
@@ -313,7 +305,6 @@ func TestParseErrorInvalidCoordinates(t *testing.T) {
 }
 
 func TestParseErrorGarbageLine(t *testing.T) {
-	// a line that is not blank, not a command, not a comment, not a room, not a link
 	path := writeTempFile(t, "1\n##start\na 0 0\n##end\nb 1 0\na-b\nhello\n")
 	_, err := Parse(path)
 	if err == nil {
@@ -322,7 +313,6 @@ func TestParseErrorGarbageLine(t *testing.T) {
 }
 
 func TestParseErrorStartFollowedByLink(t *testing.T) {
-	// ##start followed immediately by a link — link cannot be a room
 	path := writeTempFile(t, "1\n##start\na-b\na 0 0\n##end\nb 1 0\na-b\n")
 	_, err := Parse(path)
 	if err == nil {
