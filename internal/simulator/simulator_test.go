@@ -8,6 +8,30 @@ import (
 	"lemin/internal/pathfinder"
 )
 
+func TestSimulateOneAntDirectLink(t *testing.T) {
+	c := &graph.Colony{
+		Ants:  1,
+		Start: "start",
+		End:   "end",
+		Rooms: map[string]*graph.Room{
+			"start": {Name: "start"},
+			"end":   {Name: "end"},
+		},
+		Links: map[string][]string{},
+	}
+	paths := []graph.Path{{"start", "end"}}
+	turns := Simulate(c, paths)
+	if len(turns) != 1 {
+		t.Fatalf("want 1 turn, got %d", len(turns))
+	}
+	if len(turns[0]) != 1 {
+		t.Fatalf("turn 1: want 1 move, got %d", len(turns[0]))
+	}
+	if turns[0][0].AntID != 1 || turns[0][0].Room != "end" {
+		t.Errorf("turn 1: want L1-end, got L%d-%s", turns[0][0].AntID, turns[0][0].Room)
+	}
+}
+
 func TestSimulateOneAntOnePath(t *testing.T) {
 	c := &graph.Colony{
 		Ants:  1,
