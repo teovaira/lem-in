@@ -1,80 +1,13 @@
 package pathfinder
 
 import (
-	"bufio"
-	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
 	"lemin/internal/graph"
+	"lemin/internal/parser"
 )
-
-func loadColony(path string) (*graph.Colony, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	c := &graph.Colony{
-		Rooms: make(map[string]*graph.Room),
-		Links: make(map[string][]string),
-	}
-	scanner := bufio.NewScanner(f)
-	var lines []string
-	for scanner.Scan() {
-		line := strings.TrimRight(scanner.Text(), "\r")
-		if line != "" {
-			lines = append(lines, line)
-		}
-	}
-
-	if len(lines) == 0 {
-		return nil, os.ErrInvalid
-	}
-	ants, err := strconv.Atoi(lines[0])
-	if err != nil || ants <= 0 {
-		return nil, os.ErrInvalid
-	}
-	c.Ants = ants
-
-	nextStart, nextEnd := false, false
-	for _, line := range lines[1:] {
-		switch {
-		case line == "##start":
-			nextStart = true
-		case line == "##end":
-			nextEnd = true
-		case strings.HasPrefix(line, "#"):
-		case strings.Contains(line, "-") && !strings.Contains(line, " "):
-			parts := strings.SplitN(line, "-", 2)
-			a, b := parts[0], parts[1]
-			c.Links[a] = append(c.Links[a], b)
-			c.Links[b] = append(c.Links[b], a)
-		default:
-			fields := strings.Fields(line)
-			if len(fields) == 3 {
-				x, _ := strconv.Atoi(fields[1])
-				y, _ := strconv.Atoi(fields[2])
-				r := &graph.Room{Name: fields[0], X: x, Y: y}
-				c.Rooms[fields[0]] = r
-				if _, ok := c.Links[fields[0]]; !ok {
-					c.Links[fields[0]] = []string{}
-				}
-				if nextStart {
-					c.Start = fields[0]
-					nextStart = false
-				} else if nextEnd {
-					c.End = fields[0]
-					nextEnd = false
-				}
-			}
-		}
-	}
-	return c, nil
-}
 
 func makeColony(ants int, start, end string, rooms [][3]string, links [][2]string) *graph.Colony {
 	c := &graph.Colony{
@@ -241,9 +174,9 @@ func TestComputeTurns3Ants2Paths(t *testing.T) {
 
 func testExampleTurns(t *testing.T, file string, maxTurns int) {
 	t.Helper()
-	c, err := loadColony(file)
+	c, err := parser.Parse(file)
 	if err != nil {
-		t.Fatalf("loadColony: %v", err)
+		t.Fatalf("parser.Parse: %v", err)
 	}
 	paths, err := FindPaths(c)
 	if err != nil {
