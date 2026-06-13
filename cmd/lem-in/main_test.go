@@ -123,6 +123,26 @@ func TestE2EExample05(t *testing.T) {
 	}
 }
 
+func TestE2EExample06(t *testing.T) {
+	stdout, _, code := run("../../testdata/example06.txt")
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+	if !strings.HasPrefix(stdout, "100\n") {
+		t.Errorf("output must start with the ant count")
+	}
+}
+
+func TestE2EExample07(t *testing.T) {
+	stdout, _, code := run("../../testdata/example07.txt")
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+	if !strings.HasPrefix(stdout, "1000\n") {
+		t.Errorf("output must start with the ant count")
+	}
+}
+
 func TestE2EBadExample00(t *testing.T) {
 	stdout, stderr, code := run("../../testdata/badexample00.txt")
 	if code == 0 {
@@ -131,7 +151,7 @@ func TestE2EBadExample00(t *testing.T) {
 	if stdout != "" {
 		t.Errorf("want empty stdout on error, got: %q", stdout)
 	}
-	if !strings.Contains(stderr, "ERROR: invalid data format, no start room found") {
+	if !strings.Contains(stderr, "ERROR: invalid data format, invalid number of ants") {
 		t.Errorf("want specific error in stderr, got: %q", stderr)
 	}
 }
@@ -144,7 +164,7 @@ func TestE2EBadExample01(t *testing.T) {
 	if stdout != "" {
 		t.Errorf("want empty stdout on error, got: %q", stdout)
 	}
-	if !strings.Contains(stderr, "ERROR: invalid data format, invalid number of ants") {
+	if !strings.Contains(stderr, "ERROR: invalid data format, room links to itself") {
 		t.Errorf("want specific error in stderr, got: %q", stderr)
 	}
 }
