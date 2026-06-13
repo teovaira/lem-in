@@ -21,6 +21,12 @@ Built at Zone01 — Go · TDD · Conventional Commits.
 ```bash
 git clone <repo-url>
 cd lem-in
+go build -o lem-in ./cmd/lem-in
+```
+
+Or using Make:
+
+```bash
 make build
 ```
 
