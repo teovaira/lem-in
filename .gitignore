@@ -35,5 +35,6 @@ go.work.sum
 .DS_Store
 Thumbs.db
 
-# compiled binary (project output)
-lem-in
+# compiled binary (project output) — anchored to repo root so it does NOT
+# match the cmd/lem-in/ source directory
+/lem-in
